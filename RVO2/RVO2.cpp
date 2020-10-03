@@ -12,8 +12,8 @@
 #include <netinet/in.h> 
 #include <string.h> 
 
-#define MAX_AGENT 100
-#define MAX_OBSTACLE 1000
+#define MAX_AGENT 500
+#define MAX_OBSTACLE 9999
 #define PORT 2111
 
 struct Agent
@@ -139,7 +139,7 @@ void parseInformation(std::string info_string) {
                 mode = 4;
                 skip = true;
             }
-            if (element.compare("End") == 0) {
+            if (element.compare("End*") == 0) {
                 mode = 0;
                 skip = true;
             }
@@ -193,14 +193,14 @@ void parseInformation(std::string info_string) {
 }
 
 int receiveInformation(int socket) {
-    std::string info_str;
+    std::string info_str = "";
     char buffer[1024];
     int byte_count;
     do {
         byte_count = read(socket, buffer, 1023);
         buffer[byte_count] = '\0';
         info_str += buffer;
-    } while (byte_count == 1023);
+    } while (buffer[byte_count - 1] != '*');
     //std::cout << info_str << std::endl;
     if (info_str.compare("OFF") == 0) {
         return 1;
@@ -223,12 +223,13 @@ void sendCommands(RVO::Vector2 robot_pos, int socket) {
 void setupScenario(RVO::RVOSimulator* sim) {
     sim->setTimeStep(information.delta_t);
     
-    sim->setAgentDefaults(15.0f, 10, 10.0f, 1.0f, information.robot.radius, 1.2f);
+    sim->setAgentDefaults(15.0f, 10, 2.5f, 2.5f, information.robot.radius, 1.2f);
 
     sim->addAgent(RVO::Vector2(information.robot.x, information.robot.y));
     for (int i = 0; i < information.num_agents; i++) {
         sim->addAgent(RVO::Vector2(information.agents[i].x, information.agents[i].y));
     }
+
 
     sim->setAgentMaxSpeed(0, 1.2f);
     RVO::Vector2 v(information.robot.vx, information.robot.vy);
@@ -267,8 +268,15 @@ void setPreferredVelocities(RVO::RVOSimulator* sim) {
 }
 
 void updateVisualization(RVO::RVOSimulator* sim, int socket) {
+    RVO::Vector2 robot_prev_pos(information.robot.x, information.robot.y);
     RVO::Vector2 robot_pos = sim->getAgentPosition(0);
-    //std::cout << robot_pos  << std::endl;
+    RVO::Vector2 robot_vel = sim->getAgentVelocity(0);
+    std::cout << robot_prev_pos  << std::endl;
+    std::cout << robot_pos << std::endl;
+    std::cout << robot_pos - robot_prev_pos  << std::endl;
+    std::cout << robot_vel << std::endl;
+    std::cout << abs(robot_vel)  << ", " << abs(robot_pos - robot_prev_pos)  << std::endl;
+    std::cout << "==========================================" << std::endl;
     sendCommands(robot_pos, socket);
     return;
 }
@@ -300,3 +308,4 @@ int main()
 
     return 0;
 }
+

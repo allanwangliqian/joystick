@@ -222,9 +222,16 @@ int main()
     int end_flag;
     socket = establishConnection();
 
-    end_flag = receiveInformation(socket);
+    while (true) {
+        while (true) {
+            end_flag = receiveInformation(socket);
+            if (end_flag == 1) {
+                break;
+            }
 
-    sendCommands(socket);
+            sendCommands(socket);
+        }
+    }
             
     return 0;
 }

@@ -7,7 +7,7 @@ from joystick.joystick_base import JoystickBase
 from params.central_params import create_agent_params
 from utils.utils import generate_config_from_pos_3
 
-class JoystickRVO(JoystickBase):
+class JoystickSocialForce(JoystickBase):
     def __init__(self):
         super().__init__()
         self.agents = None
@@ -107,7 +107,7 @@ class JoystickRVO(JoystickBase):
                            + str(agent_v[1]) + "," + str(agent_v[2]) + "," \
                            + str(agent_goal[0]) + "," + str(agent_goal[1]) + "," \
                            + str(agent_goal[2]) + "," + str(agent_radius) + "\n"
-        info_string += "End*"
+        info_string += "End"
         return info_string
 
     def send_info_to_planner(self):
@@ -165,7 +165,6 @@ class JoystickRVO(JoystickBase):
         coordinate_str = data_b.split(',')
         x = float(coordinate_str[0])
         y = float(coordinate_str[1])
-        print([self.robot, (x,y), self.sim_state_now.sim_t])
         th = np.arctan2(y - self.robot[1], x - self.robot[0])
         if self.joystick_on:
             self.send_cmds([(x, y, th, 0)], send_vel_cmds=False)
@@ -181,4 +180,3 @@ class JoystickRVO(JoystickBase):
         self.socket.sendall(b"OFF")
         self.finish_episode()
         return
-

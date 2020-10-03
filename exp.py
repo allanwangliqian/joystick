@@ -1,12 +1,17 @@
 from params.central_params import create_joystick_params        
-from joystick.joystick_RVO import JoystickRVO as Joystick
 
 def test_joystick():
+    flag =0
+    if flag == 0:
+        from joystick.joystick_RVO import JoystickRVO as Joystick
+    else:
+        from joystick.joystick_social_force import JoystickSocialForce as Joystick
+        
     joystick_params = create_joystick_params()
     """start the joystick process"""
     J = Joystick()
-    J.establish_sender_connection()
-    J.establish_receiver_connection()
+    J.init_send_conn()
+    J.init_recv_conn()
     # first listen() for the episode names
     assert(J.get_all_episode_names())
     episodes = J.get_episodes()
