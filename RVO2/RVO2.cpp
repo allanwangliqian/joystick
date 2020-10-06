@@ -192,7 +192,7 @@ void parseInformation(std::string info_string) {
     return;
 }
 
-int receiveInformation(int socket) {
+void receiveInformation(int socket) {
     std::string info_str = "";
     char buffer[1024];
     int byte_count;
@@ -202,12 +202,8 @@ int receiveInformation(int socket) {
         info_str += buffer;
     } while (buffer[byte_count - 1] != '*');
     //std::cout << info_str << std::endl;
-    if (info_str.compare("OFF") == 0) {
-        return 1;
-    } else {
-        parseInformation(info_str);
-    }
-    return 0;
+    parseInformation(info_str);
+    return;
     
 }
 
@@ -223,7 +219,7 @@ void sendCommands(RVO::Vector2 robot_pos, int socket) {
 void setupScenario(RVO::RVOSimulator* sim) {
     sim->setTimeStep(information.delta_t);
     
-    sim->setAgentDefaults(15.0f, 10, 2.5f, 2.5f, information.robot.radius, 1.2f);
+    sim->setAgentDefaults(15.0f, 10, 2.0f, 2.0f, information.robot.radius, 1.2f);
 
     sim->addAgent(RVO::Vector2(information.robot.x, information.robot.y));
     for (int i = 0; i < information.num_agents; i++) {
@@ -284,26 +280,20 @@ void updateVisualization(RVO::RVOSimulator* sim, int socket) {
 int main()
 {
     int socket;
-    int end_flag;
     socket = establishConnection();
 
     while (true) {
-        while (true) {
-            end_flag = receiveInformation(socket);
-            if (end_flag == 1) {
-                break;
-            }
+        receiveInformation(socket);
 
-            RVO::RVOSimulator* sim = new RVO::RVOSimulator();
+        RVO::RVOSimulator* sim = new RVO::RVOSimulator();
 
-            setupScenario(sim);
+        setupScenario(sim);
 
-            setPreferredVelocities(sim);
-            sim -> doStep();
-            updateVisualization(sim, socket);
-            
-            delete sim;
-        }
+        setPreferredVelocities(sim);
+        sim -> doStep();
+        updateVisualization(sim, socket);
+        
+        delete sim;
     }
 
     return 0;

@@ -7,14 +7,15 @@
 
 #include <unistd.h> 
 #include <stdio.h> 
+#include <math.h>
 #include <sys/socket.h> 
 #include <stdlib.h> 
 #include <netinet/in.h> 
 #include <string.h> 
 
-#define MAX_AGENT 100
-#define MAX_OBSTACLE 1000
-#define PORT 2111
+#define MAX_AGENT 500
+#define MAX_OBSTACLE 9999
+#define PORT 2112
 
 struct Agent
 {
@@ -57,6 +58,8 @@ struct Info
 {
     int num_agents;
     int num_obstacles;
+    float map_height;
+    float map_width;
     struct Robot robot;
     struct Agent agents[MAX_AGENT];
     struct Obstacle obstacles[MAX_OBSTACLE];
@@ -138,7 +141,11 @@ void parseInformation(std::string info_string) {
                 mode = 4;
                 skip = true;
             }
-            if (element.compare("End") == 0) {
+            if (element.compare("map_size") == 0) {
+                mode = 5;
+                skip = true;
+            }
+            if (element.compare("End*") == 0) {
                 mode = 0;
                 skip = true;
             }
@@ -182,6 +189,10 @@ void parseInformation(std::string info_string) {
                 information.agents[information.num_agents].radius = std::stof(elem_list[10]);
                 information.num_agents++;
             }
+            if (mode == 5) {
+                information.map_height = std::stof(elem_list[0]);
+                information.map_width = std::stof(elem_list[1]);
+            }
         } else {
             skip = false;
         }
@@ -191,7 +202,7 @@ void parseInformation(std::string info_string) {
     return;
 }
 
-int receiveInformation(int socket) {
+void receiveInformation(int socket) {
     std::string info_str;
     char buffer[1024];
     int byte_count;
@@ -199,19 +210,19 @@ int receiveInformation(int socket) {
         byte_count = read(socket, buffer, 1023);
         buffer[byte_count] = '\0';
         info_str += buffer;
-    } while (byte_count == 1023);
+    } while (buffer[byte_count - 1] != '*');
     //std::cout << info_str << std::endl;
-    if (info_str.compare("OFF") == 0) {
-        return 1;
-    } else {
-        parseInformation(info_str);
-    }
-    return 0;
+    parseInformation(info_str);
+    return;
     
 }
 
-void sendCommands(int socket) {
-    const char* command_c = "Hello";
+void sendCommands(Ped::Tvector robot_pos, int socket) {
+    std::string command = std::to_string(robot_pos.x);
+    command += ",";
+    command += std::to_string(robot_pos.y);
+    std::cout << command << std::endl;
+    const char* command_c = command.c_str();
     send(socket, command_c, strlen(command_c), 0);
     return;
 }
@@ -220,17 +231,52 @@ int main()
 {
     int socket;
     int end_flag;
+    float goal_radius = 0.001;
     socket = establishConnection();
 
     while (true) {
-        while (true) {
-            end_flag = receiveInformation(socket);
-            if (end_flag == 1) {
-                break;
-            }
+        receiveInformation(socket);
 
-            sendCommands(socket);
+        Ped::Tscene *pedscene = new Ped::Tscene(0, 0, information.map_width, information.map_height);
+
+        Ped::Tagent *robot = new Ped::Tagent();
+        Ped::Twaypoint *robot_goal = new Ped::Twaypoint(
+            information.robot.goal_x, information.robot.goal_y, goal_radius);
+        robot->addWaypoint(robot_goal);
+        robot->setPosition(information.robot.x, information.robot.y, 0);
+        robot->setVmax(1.2 / information.delta_t);
+        pedscene->addAgent(robot);
+
+        for (int i = 0; i < information.num_agents; i++) {
+            Ped::Tagent *a = new Ped::Tagent();
+            Ped::Twaypoint *g = new Ped::Twaypoint(
+                information.agents[i].goal_x, information.agents[i].goal_y, goal_radius);
+            a->addWaypoint(g);
+            a->setPosition(information.agents[i].x, information.agents[i].y, 0);
+            a->setVmax(sqrt(pow(information.agents[i].vx, 2) + pow(information.agents[i].vy, 2))
+                            / information.delta_t);
+            pedscene->addAgent(a);
         }
+
+        for (int i = 0; i < information.num_obstacles; i++) {
+            Ped::Tobstacle *o = new Ped::Tobstacle(
+                information.obstacles[i].x1, information.obstacles[i].y1,
+                information.obstacles[i].x2, information.obstacles[i].y2);
+            pedscene->addObstacle(o);
+        }
+
+        pedscene->moveAgents(information.delta_t);
+        pedscene->moveAgents(information.delta_t);
+
+        Ped::Tvector robot_new_pos = robot->getPosition();
+        std::cout << robot_new_pos.x << ", " << robot_new_pos.y << std::endl;
+
+        sendCommands(robot_new_pos, socket);
+
+        for (Ped::Twaypoint *g : pedscene->getAllWaypoints()) delete g;
+        for (Ped::Tagent *a : pedscene->getAllAgents()) delete a;
+        for (Ped::Tobstacle *o : pedscene->getAllObstacles()) delete o;
+        delete pedscene;
     }
             
     return 0;

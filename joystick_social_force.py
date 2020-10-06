@@ -15,7 +15,7 @@ class JoystickSocialForce(JoystickBase):
         self.robot = None
 
         HOST = "127.0.0.1"
-        PORT = 2111
+        PORT = 2112
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((HOST, PORT))
         return
@@ -24,6 +24,8 @@ class JoystickSocialForce(JoystickBase):
         scale = float(env["map_scale"])
         map_trav = env["map_traversible"]
         edges_raw = set()
+        self.map_height = len(map_trav) * scale
+        self.map_width = len(map_trav[0]) * scale
         for i in range(len(map_trav)):
             for j in range(len(map_trav[0])):
                 if map_trav[i][j] == False:
@@ -107,7 +109,9 @@ class JoystickSocialForce(JoystickBase):
                            + str(agent_v[1]) + "," + str(agent_v[2]) + "," \
                            + str(agent_goal[0]) + "," + str(agent_goal[1]) + "," \
                            + str(agent_goal[2]) + "," + str(agent_radius) + "\n"
-        info_string += "End"
+        info_string += "map_size\n"
+        info_string += str(self.map_height) + "," + str(self.map_width) + "\n"
+        info_string += "End*"
         return info_string
 
     def send_info_to_planner(self):
@@ -165,6 +169,7 @@ class JoystickSocialForce(JoystickBase):
         coordinate_str = data_b.split(',')
         x = float(coordinate_str[0])
         y = float(coordinate_str[1])
+        print([self.robot, (x,y), self.sim_state_now.sim_t])
         th = np.arctan2(y - self.robot[1], x - self.robot[0])
         if self.joystick_on:
             self.send_cmds([(x, y, th, 0)], send_vel_cmds=False)
@@ -180,3 +185,4 @@ class JoystickSocialForce(JoystickBase):
         self.socket.sendall(b"OFF")
         self.finish_episode()
         return
+

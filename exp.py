@@ -1,11 +1,13 @@
 from params.central_params import create_joystick_params        
 
 def test_joystick():
-    flag =0
+    flag = 2
     if flag == 0:
         from joystick.joystick_RVO import JoystickRVO as Joystick
-    else:
+    elif flag == 1:
         from joystick.joystick_social_force import JoystickSocialForce as Joystick
+    else:
+        from joystick.joystick_sacadrl import JoystickSACADRL as Joystick
         
     joystick_params = create_joystick_params()
     """start the joystick process"""
