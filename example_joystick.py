@@ -158,7 +158,7 @@ class JoystickWithPlanner(JoystickBase):
             self.robot_current[2] - robot_prev[2]) / self.sim_delta_t
 
         self.sim_times += [round(self.sim_state_now.get_sim_t()
-                                 /self.sim_state_now.get_delta_t())]
+                                 / self.sim_state_now.get_delta_t())]
 
     def joystick_plan(self):
         """ Runs the planner for one step from config to generate a
@@ -215,9 +215,9 @@ class JoystickWithPlanner(JoystickBase):
         # TODO: do I need the listener thing?
         self.robot_receiver_socket.listen(1)  # init listener thread
         self.joystick_on = True
-        self.simulator_joystick_update_ratio = int(
-            np.floor(self.sim_delta_t / self.agent_params.dt))
-        while(self.joystick_on):
+        self.simulator_joystick_update_ratio = \
+            int(np.floor(self.sim_delta_t / self.agent_params.dt))
+        while self.joystick_on:
             # gather information about the world state based off the simulator
             self.joystick_sense()
             # create a plan for the next steps of the trajectory
@@ -225,7 +225,7 @@ class JoystickWithPlanner(JoystickBase):
             # send a command to the robot
             self.joystick_act()
         # complete this episode, move on to the next if need be
-        print(np.diff(self.sim_times))
+        # print(np.diff(self.sim_times))
         self.finish_episode()
 
 
@@ -248,13 +248,12 @@ class JoystickWithPlannerPosns(JoystickWithPlanner):
         the subtrajectory, and relevant planner data
         - Access to sim_states from the self.current_world
         """
-        try:
-            # occurs when self.commands is a valid Trajectory with several configs
-            (x, y, th, v) = self.from_conf(self.commands, -1)  # last posn
-        except:
-            # occurs if self.commands has not yet been initialized to a Trajectory
-            [x, y, th] = self.robot_current
-            v = self.robot_v
+        # get information about robot by its "current position" which was updated in sense()
+        [x, y, th] = self.robot_current
+        v = self.robot_v
+        # can also try:
+        #     # assumes the robot has executed all the previous commands in self.commands
+        #     (x, y, th, v) = self.from_conf(self.commands, -1)
         robot_config = generate_config_from_pos_3(pos_3=(x, y, th), v=v)
         self.planner_data = self.planner.optimize(robot_config,
                                                   self.goal_config,
@@ -280,9 +279,6 @@ class JoystickWithPlannerPosns(JoystickWithPlanner):
                     (x, y, th, v) = self.from_conf(self.commands, idx)
                     xytv_cmds.append((x, y, th, v))
                 self.send_cmds(xytv_cmds, send_vel_cmds=False)
-
-                # to test the sequential sense
-                break
 
                 # break if the robot finished
                 if not self.joystick_on:
