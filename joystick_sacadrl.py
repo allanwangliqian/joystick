@@ -36,6 +36,7 @@ class JoystickSACADRL(JoystickBase):
         map_trav = env["map_traversible"]
         self.map_height = len(map_trav) * scale
         self.map_width = len(map_trav[0]) * scale
+        self.map_scale = scale
         env = np.array(map_trav, dtype=np.uint8) * 255
         self.map_path = 'joystick/map.jpg'
         cv2.imwrite(self.map_path, env)
@@ -110,7 +111,8 @@ class JoystickSACADRL(JoystickBase):
             self.agents_goals[key] = goal
 
         collision_avoidance_env = CollisionAvoidanceEnv()
-        collision_avoidance_env.set_static_map(self.map_path, self.map_width, self.map_height)
+        collision_avoidance_env.set_static_map(self.map_path, 
+            self.map_width, self.map_height, self.map_scale)
         agents = self.get_agents()
         [agent.policy.initialize_network() for agent in agents if hasattr(agent.policy, 'initialize_network')]
         collision_avoidance_env.set_agents(agents)

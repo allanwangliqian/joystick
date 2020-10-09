@@ -87,20 +87,20 @@ class JoystickRVO(JoystickBase):
         info_string += str(self.sim_delta_t) + "\n"
         info_string += "obstacles\n"
         for ed in self.environment:
-            info_string += str(ed[0][0]) + "," + str(ed[0][1]) + "," \
-                           + str(ed[1][0]) + "," + str(ed[1][1]) + "\n"
+            info_string += str(ed[0][1]) + "," + str(ed[0][0]) + "," \
+                           + str(ed[1][1]) + "," + str(ed[1][0]) + "\n"
         info_string += "robot\n"
         info_string += str(self.robot[0]) + "," + str(self.robot[1]) + "," \
                        + str(self.robot[2]) + "," + str(self.robot_v[0]) + "," \
                        + str(self.robot_v[1]) + "," + str(self.robot_v[2]) + "," \
                        + str(self.goal_config[0]) + "," + str(self.goal_config[1]) + "," \
-                       + str(self.goal_config[2]) + "," + str(self.robot_radius) + "\n"
+                       + str(self.goal_config[2]) + "," + str(self.robot_radius + 0.001) + "\n"
         info_string += "agents\n"
         for key in list(self.agents.keys()):
             agent = self.agents[key]
             agent_v = self.agents_v[key]
             agent_goal = self.agents_goals[key]
-            agent_radius = self.agents_radius[key]
+            agent_radius = self.agents_radius[key] + 0.001
             info_string += key + "," \
                            + str(agent[0]) + "," + str(agent[1]) + "," \
                            + str(agent[2]) + "," + str(agent_v[0]) + "," \

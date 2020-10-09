@@ -221,7 +221,7 @@ void sendCommands(Ped::Tvector robot_pos, int socket) {
     std::string command = std::to_string(robot_pos.x);
     command += ",";
     command += std::to_string(robot_pos.y);
-    std::cout << command << std::endl;
+    std::cout << "=========================" << std::endl;
     const char* command_c = command.c_str();
     send(socket, command_c, strlen(command_c), 0);
     return;
@@ -243,8 +243,12 @@ int main()
         Ped::Twaypoint *robot_goal = new Ped::Twaypoint(
             information.robot.goal_x, information.robot.goal_y, goal_radius);
         robot->addWaypoint(robot_goal);
+        robot->setfactorsocialforce(100.0);
+        robot->setfactordesiredforce(10.0);
+        robot->setfactorobstacleforce(1.0);
         robot->setPosition(information.robot.x, information.robot.y, 0);
-        robot->setVmax(1.2 / information.delta_t);
+        robot->setVelocity(information.robot.vx, information.robot.vy, 0);
+        robot->setVmax(1.2);
         pedscene->addAgent(robot);
 
         for (int i = 0; i < information.num_agents; i++) {
@@ -253,8 +257,8 @@ int main()
                 information.agents[i].goal_x, information.agents[i].goal_y, goal_radius);
             a->addWaypoint(g);
             a->setPosition(information.agents[i].x, information.agents[i].y, 0);
-            a->setVmax(sqrt(pow(information.agents[i].vx, 2) + pow(information.agents[i].vy, 2))
-                            / information.delta_t);
+            a->setVelocity(information.agents[i].vx, information.agents[i].vy, 0);
+            a->setVmax(sqrt(pow(information.agents[i].vx, 2) + pow(information.agents[i].vy, 2)));
             pedscene->addAgent(a);
         }
 
@@ -265,10 +269,12 @@ int main()
             pedscene->addObstacle(o);
         }
 
-        pedscene->moveAgents(information.delta_t);
+        Ped::Tvector robot_old_pos = robot->getPosition();
         pedscene->moveAgents(information.delta_t);
 
         Ped::Tvector robot_new_pos = robot->getPosition();
+        Ped::Tvector robot_vel = robot_new_pos - robot_old_pos;
+        std::cout << robot_vel.length() << std::endl;
         std::cout << robot_new_pos.x << ", " << robot_new_pos.y << std::endl;
 
         sendCommands(robot_new_pos, socket);

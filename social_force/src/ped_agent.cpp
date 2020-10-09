@@ -190,6 +190,13 @@ void Ped::Tagent::setPosition(double px, double py, double pz) {
 }
 
 
+void Ped::Tagent::setVelocity(double vx, double vy, double vz) {
+    v.x = vx;
+    v.y = vy;
+    v.z = vz;
+}
+
+
 /// Sets the factor by which the social force is multiplied. Values between 0
 /// and about 10 do make sense.
 /// \date    2012-01-20
@@ -425,6 +432,17 @@ Ped::Tvector Ped::Tagent::obstacleForce(const set<const Ped::Tagent*> &neighbors
 
     double distance = sqrt(minDistanceSquared) - agentRadius;
     double forceAmount = exp(-distance/obstacleForceSigma);
+
+    /*
+    double std = distance / obstacleForceSigma;
+    double forceAmount;
+    if (std < 1) {
+        forceAmount = -log(std);
+    } else {
+        forceAmount = 0;
+    }
+    */
+
     return forceAmount * minDiff.normalized();
 }
 
@@ -517,6 +535,20 @@ void Ped::Tagent::computeForces() {
 /// \date 2003-12-29 
 /// \param h Integration time step delta t
 void Ped::Tagent::move(double h) {
+  
+  // weighted sum of all forces --> acceleration
+  a = factordesiredforce * desiredforce
+    + factorsocialforce * socialforce
+    + factorobstacleforce * obstacleforce
+    + factorlookaheadforce * lookaheadforce
+    + myforce;
+
+  // calculate the new velocity
+  v = 0.5 * v + a * h; // prob rather (0.5 / h) * v
+
+  // don't exceed maximal speed
+  if (v.length() > vmax) v = v.normalized() * vmax;
+
   // internal position update = actual move
   //    p = p + v * h;
   Tvector p_desired = p + v * h;
@@ -551,20 +583,6 @@ void Ped::Tagent::move(double h) {
   }
 
   p = p_desired;  // update my position
-
-  
-  // weighted sum of all forces --> acceleration
-  a = factordesiredforce * desiredforce
-    + factorsocialforce * socialforce
-    + factorobstacleforce * obstacleforce
-    + factorlookaheadforce * lookaheadforce
-    + myforce;
-
-  // calculate the new velocity
-  v = 0.5 * v + a * h; // prob rather (0.5 / h) * v
-
-  // don't exceed maximal speed
-  if (v.length() > vmax) v = v.normalized() * vmax;
 
   // notice scene of movement
   scene->moveAgent(this);

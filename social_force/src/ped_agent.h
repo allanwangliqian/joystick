@@ -75,6 +75,8 @@ namespace Ped {
 
         void setPosition(double px, double py, double pz);
         void setPosition(const Tvector &pos) { p = pos; };
+        void setVelocity(double vx, double vy, double vz);
+        void setVelocity(const Tvector &vel) { v = vel; };
         Tvector getPosition() const { return p; }
         Tvector getVelocity() const { return v; }
         Tvector getAcceleration() const { return a; }

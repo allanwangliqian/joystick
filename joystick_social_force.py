@@ -89,14 +89,14 @@ class JoystickSocialForce(JoystickBase):
         info_string += str(self.sim_delta_t) + "\n"
         info_string += "obstacles\n"
         for ed in self.environment:
-            info_string += str(ed[0][0]) + "," + str(ed[0][1]) + "," \
-                           + str(ed[1][0]) + "," + str(ed[1][1]) + "\n"
+            info_string += str(ed[0][1]) + "," + str(ed[0][0]) + "," \
+                           + str(ed[1][1]) + "," + str(ed[1][0]) + "\n"
         info_string += "robot\n"
         info_string += str(self.robot[0]) + "," + str(self.robot[1]) + "," \
                        + str(self.robot[2]) + "," + str(self.robot_v[0]) + "," \
                        + str(self.robot_v[1]) + "," + str(self.robot_v[2]) + "," \
                        + str(self.goal_config[0]) + "," + str(self.goal_config[1]) + "," \
-                       + str(self.goal_config[2]) + "," + str(self.robot_radius) + "\n"
+                       + str(self.goal_config[2]) + "," + str(self.robot_radius + 0.001) + "\n"
         info_string += "agents\n"
         for key in list(self.agents.keys()):
             agent = self.agents[key]
@@ -108,7 +108,7 @@ class JoystickSocialForce(JoystickBase):
                            + str(agent[2]) + "," + str(agent_v[0]) + "," \
                            + str(agent_v[1]) + "," + str(agent_v[2]) + "," \
                            + str(agent_goal[0]) + "," + str(agent_goal[1]) + "," \
-                           + str(agent_goal[2]) + "," + str(agent_radius) + "\n"
+                           + str(agent_goal[2]) + "," + str(agent_radius + 0.001) + "\n"
         info_string += "map_size\n"
         info_string += str(self.map_height) + "," + str(self.map_width) + "\n"
         info_string += "End*"
