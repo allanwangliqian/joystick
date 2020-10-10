@@ -17,6 +17,10 @@
 #define MAX_OBSTACLE 9999
 #define PORT 2112
 
+#define SF_FACTOR 10
+#define DE_FACTOR 1
+#define OB_FACTOR 3
+
 struct Agent
 {
     std::string name;
@@ -243,9 +247,20 @@ int main()
         Ped::Twaypoint *robot_goal = new Ped::Twaypoint(
             information.robot.goal_x, information.robot.goal_y, goal_radius);
         robot->addWaypoint(robot_goal);
-        robot->setfactorsocialforce(100.0);
-        robot->setfactordesiredforce(10.0);
-        robot->setfactorobstacleforce(1.0);
+
+        float crit_dist = 4 * information.robot.radius;
+        float goal_dist = sqrt(pow(information.robot.x - information.robot.goal_x, 2) + 
+                               pow(information.robot.y - information.robot.goal_y, 2));
+        if (goal_dist <= crit_dist) {
+            robot->setfactorsocialforce(SF_FACTOR);
+            robot->setfactordesiredforce(1000);
+            robot->setfactorobstacleforce(OB_FACTOR);
+        } else {
+            robot->setfactorsocialforce(SF_FACTOR);
+            robot->setfactordesiredforce(DE_FACTOR);
+            robot->setfactorobstacleforce(OB_FACTOR);
+        }
+
         robot->setPosition(information.robot.x, information.robot.y, 0);
         robot->setVelocity(information.robot.vx, information.robot.vy, 0);
         robot->setVmax(1.2);
@@ -270,11 +285,12 @@ int main()
         }
 
         Ped::Tvector robot_old_pos = robot->getPosition();
+        
         pedscene->moveAgents(information.delta_t);
 
         Ped::Tvector robot_new_pos = robot->getPosition();
         Ped::Tvector robot_vel = robot_new_pos - robot_old_pos;
-        std::cout << robot_vel.length() << std::endl;
+        std::cout << robot_vel.x << ", " << robot_vel.y << std::endl;
         std::cout << robot_new_pos.x << ", " << robot_new_pos.y << std::endl;
 
         sendCommands(robot_new_pos, socket);

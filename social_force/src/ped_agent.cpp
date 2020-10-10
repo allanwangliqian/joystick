@@ -544,14 +544,17 @@ void Ped::Tagent::move(double h) {
     + myforce;
 
   // calculate the new velocity
-  v = 0.5 * v + a * h; // prob rather (0.5 / h) * v
+  //v = 0.5 * v + a * h; // prob rather (0.5 / h) * v
+  Tvector v_old(v.x, v.y, v.z);
+  v = v + a * h; // prob rather (0.5 / h) * v
 
   // don't exceed maximal speed
   if (v.length() > vmax) v = v.normalized() * vmax;
 
   // internal position update = actual move
   //    p = p + v * h;
-  Tvector p_desired = p + v * h;
+  //Tvector p_desired = p + v * h;
+  Tvector p_desired = p + 0.5 * (v + v_old) * h;
 
 
   Ped::Tvector intersection;
