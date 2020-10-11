@@ -24,7 +24,7 @@ from gym_collision_avoidance.envs.sensors.OtherAgentsStatesSensor import OtherAg
 
 class JoystickSACADRL(JoystickBase):
     def __init__(self):
-        super().__init__()
+        super().__init__("sacadrl")
         self.agents = None
         self.agent_radius = None
         self.robot = None

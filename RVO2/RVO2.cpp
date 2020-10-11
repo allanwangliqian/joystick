@@ -290,10 +290,13 @@ void updateVisualization(RVO::RVOSimulator* sim, int socket) {
         information.agents[min_idx-1].x + information.agents[min_idx-1].vx * information.delta_t,
         information.agents[min_idx-1].y + information.agents[min_idx-1].vy * information.delta_t);
 
-        RVO::Vector2 diff = normalize(agent_est_pos - agent_origin) - 
-                            normalize(agent_pos - agent_origin);
-        robot_pos = (normalize(robot_pos - robot_prev_pos) + diff) 
-                    * abs(robot_pos - robot_prev_pos) + robot_prev_pos;
+        if ((abs(agent_est_pos - agent_origin) > 0.0001) && 
+            (abs(agent_pos - agent_origin) > 0.0001)) {
+            RVO::Vector2 diff = normalize(agent_est_pos - agent_origin) - 
+                                normalize(agent_pos - agent_origin);
+            robot_pos = (normalize(robot_pos - robot_prev_pos) + diff) 
+                        * abs(robot_pos - robot_prev_pos) + robot_prev_pos;
+        }
     }
 
     //std::cout << robot_prev_pos  << std::endl;

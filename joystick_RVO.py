@@ -9,7 +9,7 @@ from utils.utils import generate_config_from_pos_3
 
 class JoystickRVO(JoystickBase):
     def __init__(self):
-        super().__init__()
+        super().__init__("RVO")
         self.agents = None
         self.agent_radius = None
         self.robot = None

@@ -9,7 +9,7 @@ from utils.utils import generate_config_from_pos_3
 
 class JoystickSocialForce(JoystickBase):
     def __init__(self):
-        super().__init__()
+        super().__init__("social_force")
         self.agents = None
         self.agent_radius = None
         self.robot = None
