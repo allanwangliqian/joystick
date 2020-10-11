@@ -14,6 +14,7 @@ from gym_collision_avoidance.envs import Config
 from gym_collision_avoidance.envs.collision_avoidance_env import CollisionAvoidanceEnv
 from gym_collision_avoidance.envs.agent import Agent
 from gym_collision_avoidance.envs.policies.CADRLPolicy import CADRLPolicy
+from gym_collision_avoidance.envs.policies.GA3CCADRLPolicy import GA3CCADRLPolicy
 from gym_collision_avoidance.envs.policies.NonCooperativePolicy import NonCooperativePolicy
 from gym_collision_avoidance.envs.dynamics.UnicycleDynamics import UnicycleDynamics
 from gym_collision_avoidance.envs.sensors.OccupancyGridSensor import OccupancyGridSensor
