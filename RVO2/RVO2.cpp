@@ -65,6 +65,9 @@ struct Info
 
 struct Info information;
 RVO::Vector2 robot_goal;
+float standard = (0.334 + 0.2) * 2;
+//float standard = (information.robot.radius + information.agents[min_idx - 1].radius) * 2;
+//float standard = abs(robot_vel) * 5.0 / information.delta_t;
 
 int establishConnection() {
     int server_fd, new_socket;
@@ -219,7 +222,7 @@ void sendCommands(RVO::Vector2 robot_pos, int socket) {
 void setupScenario(RVO::RVOSimulator* sim) {
     sim->setTimeStep(information.delta_t);
     
-    sim->setAgentDefaults(15.0f, 50, 2.5f, 2.5f, information.robot.radius, 1.2f);
+    sim->setAgentDefaults(15.0f, 50, 5.0f, 5.0f, information.robot.radius, 1.2f);
 
     sim->addAgent(RVO::Vector2(information.robot.x, information.robot.y));
     for (int i = 0; i < information.num_agents; i++) {
@@ -232,8 +235,7 @@ void setupScenario(RVO::RVOSimulator* sim) {
     sim->setAgentVelocity(0, v);
     for (int i = 1; i < sim->getNumAgents(); i++) {
         sim->setAgentRadius(i, information.agents[i - 1].radius);
-        sim->setAgentNeighborDist(i, 
-                (information.robot.radius + information.agents[i - 1].radius) * 2);
+        sim->setAgentNeighborDist(i, standard);
         sim->setAgentMaxNeighbors(i, 1);
         //sim->setAgentTimeHorizon(i, 0.01f);
         //sim->setAgentTimeHorizonObst(i, 0.01f);
@@ -270,12 +272,13 @@ void updateVisualization(RVO::RVOSimulator* sim, int socket) {
     RVO::Vector2 robot_pos = sim->getAgentPosition(0);
     RVO::Vector2 robot_vel = sim->getAgentVelocity(0);
 
+    /*
     float dist;
     int min_idx = 0;
     float min_dist = 1000;
     for (int i = 1; i < sim->getNumAgents(); i++) {
         RVO::Vector2 a_pos = sim->getAgentPosition(i);
-        float dist = abs(a_pos - robot_pos);
+        dist = abs(a_pos - robot_pos);
         if (dist < min_dist) {
             min_idx = i;
             min_dist = dist;
@@ -283,7 +286,7 @@ void updateVisualization(RVO::RVOSimulator* sim, int socket) {
     }
 
     if ((min_idx > 0) && 
-       (min_dist <= (information.robot.radius + information.agents[min_idx - 1].radius) * 2)) {
+       (min_dist <= standard)) {
         RVO::Vector2 agent_origin(information.agents[min_idx-1].x, information.agents[min_idx-1].y);
         RVO::Vector2 agent_pos = sim->getAgentPosition(min_idx);
         RVO::Vector2 agent_est_pos(
@@ -291,18 +294,20 @@ void updateVisualization(RVO::RVOSimulator* sim, int socket) {
         information.agents[min_idx-1].y + information.agents[min_idx-1].vy * information.delta_t);
 
         if ((abs(agent_est_pos - agent_origin) > 0.0001) && 
-            (abs(agent_pos - agent_origin) > 0.0001)) {
+            (abs(agent_pos - agent_origin) > 0.0001) &&
+            (abs(robot_pos - robot_prev_pos) > 0.0001)) {
             RVO::Vector2 diff = normalize(agent_est_pos - agent_origin) - 
                                 normalize(agent_pos - agent_origin);
             robot_pos = (normalize(robot_pos - robot_prev_pos) + diff) 
                         * abs(robot_pos - robot_prev_pos) + robot_prev_pos;
         }
     }
+    */
 
     //std::cout << robot_prev_pos  << std::endl;
     std::cout << robot_pos << std::endl;
     //std::cout << robot_pos - robot_prev_pos  << std::endl;
-    //std::cout << robot_vel << std::endl;
+    std::cout << robot_vel << std::endl;
     //std::cout << abs(robot_vel)  << ", " << abs(robot_pos - robot_prev_pos)  << std::endl;
     std::cout << "==========================================" << std::endl;
     sendCommands(robot_pos, socket);

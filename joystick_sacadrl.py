@@ -91,14 +91,14 @@ class JoystickSACADRL(JoystickBase):
 
     def get_agents(self):
         robot_max_spd = 1.2
-        self.env_robot = Agent(self.robot[0], self.robot[1], self.goal_config[0], self.goal_config[1], self.robot_radius, robot_max_spd, self.robot[2], CADRLPolicy, UnicycleDynamics, [OtherAgentsStatesSensor, LaserScanSensor], -1)
+        self.env_robot = Agent(self.robot[0], self.robot[1], self.goal_config[0], self.goal_config[1], self.robot_radius + 0.001, robot_max_spd, self.robot[2], CADRLPolicy, UnicycleDynamics, [OtherAgentsStatesSensor, LaserScanSensor], -1)
         env_agents = [self.env_robot]
         for i, key in enumerate(list(self.agents.keys())):
             agent = self.agents[key]
             agent_v = self.agents_v[key]
             agent_goal = self.agents_goals[key]
             agent_radius = self.agents_radius[key]
-            env_agent = Agent(agent[0], agent[1], agent_goal[0], agent_goal[1], agent_radius, np.sqrt(agent_v[0] ** 2 + agent_v[1] ** 2), agent[2], NonCooperativePolicy, UnicycleDynamics, [OtherAgentsStatesSensor, LaserScanSensor], i)
+            env_agent = Agent(agent[0], agent[1], agent_goal[0], agent_goal[1], agent_radius + 0.001, np.sqrt(agent_v[0] ** 2 + agent_v[1] ** 2), agent[2], NonCooperativePolicy, UnicycleDynamics, [OtherAgentsStatesSensor, LaserScanSensor], i)
             env_agents.append(env_agent)
 
         return env_agents
