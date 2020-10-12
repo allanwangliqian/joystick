@@ -6,8 +6,14 @@ def test_joystick():
         from joystick.joystick_RVO import JoystickRVO as Joystick
     elif flag == 1:
         from joystick.joystick_social_force import JoystickSocialForce as Joystick
-    else:
+    elif flag == 2:
         from joystick.joystick_sacadrl import JoystickSACADRL as Joystick
+    elif flag == 3:
+        from joystick.joystick_RVO_with_checkpoints import JoystickRVOwCkpt as Joystick
+    elif flag == 4:
+        from joystick.joystick_social_force_with_checkpoints import JoystickSocialForcewCkpt as Joystick
+    elif flag == 5:
+        from joystick.joystick_sacadrl_with_checkpoints import JoystickSACADRLwCkpt as Joystick
         
     joystick_params = create_joystick_params()
     """start the joystick process"""

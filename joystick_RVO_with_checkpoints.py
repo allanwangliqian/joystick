@@ -7,7 +7,11 @@ from joystick.joystick_base import JoystickBase
 from params.central_params import create_agent_params
 from utils.utils import generate_config_from_pos_3
 
-class JoystickRVO(JoystickBase):
+from trajectory.trajectory import Trajectory, SystemConfig
+from utils.utils import generate_config_from_pos_3, euclidean_dist2
+from simulators.agent import Agent
+
+class JoystickRVOwCkpt(JoystickBase):
     def __init__(self):
         super().__init__("RVO_w_ckpt")
         self.agents = None
@@ -68,8 +72,18 @@ class JoystickRVO(JoystickBase):
                             
         return edges_set
 
+    def init_obstacle_map_ckpt(self, renderer=0):
+        """ Initializes the sbpd map."""
+        p = self.agent_params.obstacle_map_params
+        env = self.current_ep.get_environment()
+        return p.obstacle_map(p, renderer,
+                              res=float(env["map_scale"]) * 100.,
+                              map_trav=np.array(env["map_traversible"])
+                              )
+
     def init_control_pipeline(self):
-        self.goal_config = self.get_robot_goal()
+        #self.goal_config = self.get_robot_goal()
+        self.goal_config = generate_config_from_pos_3(self.get_robot_goal())
         env = self.current_ep.get_environment()
         self.environment = self.init_obstacle_map(env)
         self.robot = self.get_robot_start()
@@ -78,8 +92,28 @@ class JoystickRVO(JoystickBase):
         for key in list(agents_info.keys()):
             agent = agents_info[key]
             self.agents[key] = agent.get_current_config().to_3D_numpy()
+
+        self.agent_params = create_agent_params(with_obstacle_map=True)
+        self.obstacle_map = self.init_obstacle_map_ckpt()
+        self.obj_fn = Agent._init_obj_fn(self, params=self.agent_params)
+        self.obj_fn.add_objective(
+            Agent._init_psc_objective(params=self.agent_params))
+        self.fmm_map = Agent._init_fmm_map(self, params=self.agent_params)
+        Agent._update_fmm_map(self)
+        self.planner = Agent._init_planner(self, params=self.agent_params)
+        self.vehicle_data = self.planner.empty_data_dict()
+        self.system_dynamics = Agent._init_system_dynamics(
+            self, params=self.agent_params)
+
+        self.robot_goal = None
         self.commands = None
         return
+
+    def from_conf(self, configs, idx):
+        x = float(configs._position_nk2[0][idx][0])
+        y = float(configs._position_nk2[0][idx][1])
+        th = float(configs._heading_nk1[0][idx][0])
+        return (x, y, th)
 
     def convert_to_string(self):
         info_string = ""
@@ -93,14 +127,14 @@ class JoystickRVO(JoystickBase):
         info_string += str(self.robot[0]) + "," + str(self.robot[1]) + "," \
                        + str(self.robot[2]) + "," + str(self.robot_v[0]) + "," \
                        + str(self.robot_v[1]) + "," + str(self.robot_v[2]) + "," \
-                       + str(self.goal_config[0]) + "," + str(self.goal_config[1]) + "," \
-                       + str(self.goal_config[2]) + "," + str(self.robot_radius + 0.001) + "\n"
+                       + str(self.robot_goal[0]) + "," + str(self.robot_goal[1]) + "," \
+                       + str(self.robot_goal[2]) + "," + str(self.robot_radius * 1.05) + "\n"
         info_string += "agents\n"
         for key in list(self.agents.keys()):
             agent = self.agents[key]
             agent_v = self.agents_v[key]
             agent_goal = self.agents_goals[key]
-            agent_radius = self.agents_radius[key] + 0.001
+            agent_radius = self.agents_radius[key] * 1.05
             info_string += key + "," \
                            + str(agent[0]) + "," + str(agent[1]) + "," \
                            + str(agent[2]) + "," + str(agent_v[0]) + "," \
@@ -114,6 +148,23 @@ class JoystickRVO(JoystickBase):
         info_string = self.convert_to_string()
         self.socket.sendall(info_string.encode("utf-8"))
         return
+
+    def query_next_ckpt(self):
+        robot_v_norm = np.sqrt(self.robot_v[0] ** 2 +  self.robot_v[1] ** 2)
+        robot_w = self.robot_v[2]
+        robot_config = generate_config_from_pos_3(self.robot,
+                                                  dt=self.agent_params.dt,
+                                                  v=robot_v_norm,
+                                                  w=robot_w)
+        planner_data = self.planner.optimize(robot_config,
+                                             self.goal_config,
+                                             sim_state_hist=self.sim_states)
+        tmp_goal = Trajectory.new_traj_clip_along_time_axis(planner_data['trajectory'],
+                                                            self.agent_params.control_horizon,
+                                                            repeat_second_to_last_speed=True)
+        robot_goal = self.from_conf(tmp_goal, -1)
+
+        return robot_goal
 
     def joystick_sense(self):
         self.send_to_robot("sense")
@@ -146,6 +197,10 @@ class JoystickRVO(JoystickBase):
             else:
                 v = np.array([0, 0, 0], dtype=np.float32)
             self.agents_v[key] = v
+
+        if ((self.robot_goal == None) or 
+           (euclidean_dist2(self.robot, self.robot_goal) <= self.robot_radius)):
+            self.robot_goal = self.query_next_ckpt()
         return
 
     def joystick_plan(self):

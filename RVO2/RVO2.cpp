@@ -65,9 +65,6 @@ struct Info
 
 struct Info information;
 RVO::Vector2 robot_goal;
-float standard = (0.334 + 0.2) * 2;
-//float standard = (information.robot.radius + information.agents[min_idx - 1].radius) * 2;
-//float standard = abs(robot_vel) * 5.0 / information.delta_t;
 
 int establishConnection() {
     int server_fd, new_socket;
@@ -222,7 +219,7 @@ void sendCommands(RVO::Vector2 robot_pos, int socket) {
 void setupScenario(RVO::RVOSimulator* sim) {
     sim->setTimeStep(information.delta_t);
     
-    sim->setAgentDefaults(15.0f, 50, 5.0f, 5.0f, information.robot.radius, 1.2f);
+    sim->setAgentDefaults(50.0f, 50, 5.0f, 5.0f, information.robot.radius, 1.2f);
 
     sim->addAgent(RVO::Vector2(information.robot.x, information.robot.y));
     for (int i = 0; i < information.num_agents; i++) {
@@ -235,8 +232,8 @@ void setupScenario(RVO::RVOSimulator* sim) {
     sim->setAgentVelocity(0, v);
     for (int i = 1; i < sim->getNumAgents(); i++) {
         sim->setAgentRadius(i, information.agents[i - 1].radius);
-        sim->setAgentNeighborDist(i, standard);
-        sim->setAgentMaxNeighbors(i, 1);
+        sim->setAgentNeighborDist(i, 0.0);
+        sim->setAgentMaxNeighbors(i, 0);
         //sim->setAgentTimeHorizon(i, 0.01f);
         //sim->setAgentTimeHorizonObst(i, 0.01f);
         RVO::Vector2 v(information.agents[i - 1].vx, information.agents[i - 1].vy);
