@@ -1,7 +1,7 @@
 from params.central_params import create_joystick_params        
 
 def test_joystick():
-    flag = 0
+    flag = 5
     if flag == 0:
         from joystick.joystick_RVO import JoystickRVO as Joystick
     elif flag == 1:

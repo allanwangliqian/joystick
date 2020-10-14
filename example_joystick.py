@@ -115,8 +115,8 @@ class JoystickWithPlanner(JoystickBase):
         self.agent_params = create_agent_params(with_obstacle_map=True)
         self.obstacle_map = self.init_obstacle_map()
         self.obj_fn = Agent._init_obj_fn(self, params=self.agent_params)
-        self.obj_fn.add_objective(
-            Agent._init_psc_objective(params=self.agent_params))
+        #self.obj_fn.add_objective(
+        #    Agent._init_psc_objective(params=self.agent_params))
 
         # Initialize Fast-Marching-Method map for agent's pathfinding
         self.fmm_map = Agent._init_fmm_map(self, params=self.agent_params)
