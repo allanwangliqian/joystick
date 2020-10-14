@@ -82,8 +82,8 @@ class JoystickRVOwCkpt(JoystickBase):
                               )
 
     def init_control_pipeline(self):
-        self.final_robot_goal = self.get_robot_goal()
-        self.goal_config = generate_config_from_pos_3(self.final_robot_goal)
+        self.robot_goal_final = self.get_robot_goal()
+        self.goal_config = generate_config_from_pos_3(self.robot_goal_final)
         env = self.current_ep.get_environment()
         self.environment = self.init_obstacle_map(env)
         self.robot = self.get_robot_start()
@@ -96,8 +96,8 @@ class JoystickRVOwCkpt(JoystickBase):
         self.agent_params = create_agent_params(with_obstacle_map=True)
         self.obstacle_map = self.init_obstacle_map_ckpt()
         self.obj_fn = Agent._init_obj_fn(self, params=self.agent_params)
-        self.obj_fn.add_objective(
-            Agent._init_psc_objective(params=self.agent_params))
+        #self.obj_fn.add_objective(
+        #    Agent._init_psc_objective(params=self.agent_params))
         self.fmm_map = Agent._init_fmm_map(self, params=self.agent_params)
         Agent._update_fmm_map(self)
         self.planner = Agent._init_planner(self, params=self.agent_params)
@@ -105,32 +105,7 @@ class JoystickRVOwCkpt(JoystickBase):
         self.system_dynamics = Agent._init_system_dynamics(
             self, params=self.agent_params)
 
-        self.robot_checkpoints = []
-        tmp_robot = self.robot
-        tmp_spd = 0
-        tmp_w = 0        
-        to_goal_threshold = 5
-        while (euclidean_dist2(tmp_robot, self.final_robot_goal) > to_goal_threshold):
-            print(euclidean_dist2(tmp_robot, self.final_robot_goal))
-            robot_config = generate_config_from_pos_3(tmp_robot,
-                                                      dt=self.agent_params.dt,
-                                                      v=tmp_spd,
-                                                      w=tmp_w)
-            print([self.agent_params.control_horizon])
-            planner_data = self.planner.optimize(robot_config,
-                                                 self.goal_config,
-                                                 sim_state_hist=self.sim_states)
-            tmp_traj = Trajectory.new_traj_clip_along_time_axis(planner_data['trajectory'],
-                                                            self.agent_params.control_horizon,
-                                                            repeat_second_to_last_speed=True)
-            tmp_prev_robot = self.from_conf(tmp_traj, -2)
-            tmp_robot = self.from_conf(tmp_traj, -1)
-            tmp_spd = euclidean_dist2(tmp_robot, tmp_prev_robot) / self.agent_params.dt
-            tmp_w = (tmp_robot[2] - tmp_prev_robot[2]) / self.agent_params.dt
-            self.robot_checkpoints.append(tmp_robot)
-
-        self.robot_goal_idx = 0
-        self.robot_goal = self.robot_checkpoints[self.robot_goal_idx]
+        self.robot_goal = self.robot
         self.commands = None
         return
 
@@ -139,6 +114,23 @@ class JoystickRVOwCkpt(JoystickBase):
         y = float(configs._position_nk2[0][idx][1])
         th = float(configs._heading_nk1[0][idx][0])
         return (x, y, th)
+
+    def query_next_ckpt(self):
+        robot_v_norm = np.sqrt(self.robot_v[0] ** 2 +  self.robot_v[1] ** 2)
+        robot_w = self.robot_v[2]
+        robot_config = generate_config_from_pos_3(self.robot,
+                                                  dt=self.agent_params.dt,
+                                                  v=robot_v_norm,
+                                                  w=robot_w)
+        planner_data = self.planner.optimize(robot_config,
+                                             self.goal_config,
+                                             sim_state_hist=self.sim_states)
+        tmp_goal = Trajectory.new_traj_clip_along_time_axis(planner_data['trajectory'],
+                                                            self.agent_params.control_horizon,
+                                                            repeat_second_to_last_speed=True)
+        robot_goal = self.from_conf(tmp_goal, -1)
+
+        return robot_goal
 
     def convert_to_string(self):
         info_string = ""
@@ -206,13 +198,13 @@ class JoystickRVOwCkpt(JoystickBase):
                 v = np.array([0, 0, 0], dtype=np.float32)
             self.agents_v[key] = v
 
-        if ((euclidean_dist2(self.robot, self.robot_goal) <= self.robot_radius)
-            and (self.robot_goal_idx < len(self.robot_checkpoints))):
-            self.robot_goal_idx += 1
-            if (self.robot_goal_idx == len(self.robot_checkpoints)):
-                self.robot_goal = self.final_robot_goal
+        ckpt_radius = 1
+        goal_radius = 5
+        if (euclidean_dist2(self.robot, self.robot_goal) <= ckpt_radius):
+            if (euclidean_dist2(self.robot, self.robot_goal_final) < goal_radius):
+                self.robot_goal = self.robot_goal_final
             else:
-                self.robot_goal = self.robot_checkpoints[self.robot_goal_idx]
+                self.robot_goal = self.query_next_ckpt()
         return
 
     def joystick_plan(self):

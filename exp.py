@@ -1,7 +1,7 @@
 from params.central_params import create_joystick_params        
 
 def test_joystick():
-    flag = 5
+    flag = 3
     if flag == 0:
         from joystick.joystick_RVO import JoystickRVO as Joystick
     elif flag == 1:
@@ -11,7 +11,7 @@ def test_joystick():
     elif flag == 3:
         from joystick.joystick_RVO_with_checkpoints import JoystickRVOwCkpt as Joystick
     elif flag == 4:
-        from joystick.joystick_social_force_with_checkpoints import JoystickSocialForcewCkpt as Joystick
+        raise NotImplementedError
     elif flag == 5:
         from joystick.joystick_sacadrl_with_checkpoints import JoystickSACADRLwCkpt as Joystick
         
